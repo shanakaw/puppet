@@ -76,9 +76,9 @@ module Puppet::Network::HTTP
     # @param headers [Hash{String => String}]
     # @!macro common_options
     # @api public
-    def get(path, headers = {}, options = {})
+    def get(path, headers = {}, options = {}, &block)
       opts = { :idempotent => true }.merge(options)
-      request_with_redirects(Net::HTTP::Get.new(path, headers), opts)
+      request_with_redirects(Net::HTTP::Get.new(path, headers), opts, &block)
     end
 
     # @param path [String]
@@ -86,19 +86,19 @@ module Puppet::Network::HTTP
     # @param headers [Hash{String => String}]
     # @!macro common_options
     # @api public
-    def post(path, data, headers = nil, options = {})
+    def post(path, data, headers = nil, options = {}, &block)
       request = Net::HTTP::Post.new(path, headers)
       request.body = data
-      request_with_redirects(request, options)
+      request_with_redirects(request, options, &block)
     end
 
     # @param path [String]
     # @param headers [Hash{String => String}]
     # @!macro common_options
     # @api public
-    def head(path, headers = {}, options = {})
+    def head(path, headers = {}, options = {}, &block)
       opts = { :idempotent => true }.merge(options)
-      request_with_redirects(Net::HTTP::Head.new(path, headers), opts)
+      request_with_redirects(Net::HTTP::Head.new(path, headers), opts, &block)
     end
 
     # @param path [String]
@@ -124,32 +124,17 @@ module Puppet::Network::HTTP
       self.send(method, *args)
     end
 
-    # TODO: These are proxies for the Net::HTTP#request_* methods, which are
-    # almost the same as the "get", "post", etc. methods that we've ported above,
-    # but they are able to accept a code block and will yield to it, which is
-    # necessary to stream responses, e.g. file content.  For now
-    # we're not funneling these proxy implementations through our #request
-    # method above, so they will not inherit the same error handling.  In the
-    # future we may want to refactor these so that they are funneled through
-    # that method and do inherit the error handling.
     def request_get(*args, &block)
-      with_connection(@site) do |connection|
-        connection.request_get(*args, &block)
-      end
+      self.send(:get, *args, &block)
     end
 
     def request_head(*args, &block)
-      with_connection(@site) do |connection|
-        connection.request_head(*args, &block)
-      end
+      self.send(:head, *args, &block)
     end
 
     def request_post(*args, &block)
-      with_connection(@site) do |connection|
-        connection.request_post(*args, &block)
-      end
+      self.send(:post, *args, &block)
     end
-    # end of Net::HTTP#request_* proxies
 
     # The address to connect to.
     def address
@@ -168,7 +153,7 @@ module Puppet::Network::HTTP
 
     private
 
-    def request_with_redirects(request, options)
+    def request_with_redirects(request, options, &block)
       current_request = request
       current_site = @site
       response = nil
@@ -180,9 +165,9 @@ module Puppet::Network::HTTP
           apply_options_to(current_request, options)
 
           if options[:idempotent]
-            current_response = request_with_retries(connection, current_request)
+            current_response = request_with_retries(connection, current_request, &block)
           else
-            current_response = execute_request(connection, current_request)
+            current_response = execute_request(connection, current_request, &block)
           end
 
           if [301, 302, 307].include?(current_response.code.to_i)
@@ -208,14 +193,14 @@ module Puppet::Network::HTTP
       raise RedirectionLimitExceededException, "Too many HTTP redirections for #{@host}:#{@port}"
     end
 
-    def request_with_retries(connection, request)
+    def request_with_retries(connection, request, &block)
       e = nil
       response = nil
       (@retry_limit + 1).times do |i|
         e = nil
         response = nil
         begin
-          response = execute_request(connection, request)
+          response = execute_request(connection, request, &block)
           break if ![500, 502, 503, 504].include?(response.code.to_i)
         rescue SystemCallError, Net::HTTPBadResponse, Timeout::Error, SocketError => e
         end
@@ -234,8 +219,8 @@ module Puppet::Network::HTTP
       end
     end
 
-    def execute_request(connection, request)
-      response = connection.request(request)
+    def execute_request(connection, request, &block)
+      response = connection.request(request, &block)
 
       # Check the peer certs and warn if they're nearing expiration.
       warn_if_near_expiration(*@verify.peer_certs)
