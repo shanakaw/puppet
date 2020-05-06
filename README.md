@@ -73,4 +73,3 @@ Long-term support, including security patches and bug fixes, is available for
 commercial customers. Please see the following page for more details:
 
 [Puppet Enterprise Support Lifecycle](http://puppetlabs.com/misc/puppet-enterprise-lifecycle)
-
