@@ -1,5 +1,5 @@
 require 'puppet/version'
-
+require 'syck'
 # see the bottom of the file for further inclusions
 # Also see the new Vendor support - towards the end
 #
