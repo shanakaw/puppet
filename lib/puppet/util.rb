@@ -23,7 +23,7 @@ module Util
 
   extend Puppet::Util::SymbolicFileMode
 
-  def get_env(name, mode = default_env)
+  def get_env(name)
     ENV[name]
   end
   module_function :get_env
