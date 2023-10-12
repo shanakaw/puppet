@@ -23,6 +23,11 @@ module Util
 
   extend Puppet::Util::SymbolicFileMode
 
+  def get_env(name, mode = default_env)
+    ENV[name]
+  end
+  module_function :get_env
+
   def self.activerecord_version
     if (defined?(::ActiveRecord) and defined?(::ActiveRecord::VERSION) and defined?(::ActiveRecord::VERSION::MAJOR) and defined?(::ActiveRecord::VERSION::MINOR))
       ([::ActiveRecord::VERSION::MAJOR, ::ActiveRecord::VERSION::MINOR].join('.').to_f)
