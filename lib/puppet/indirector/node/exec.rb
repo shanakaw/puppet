@@ -50,7 +50,6 @@ class Puppet::Node::Exec < Puppet::Indirector::Exec
 
   # Translate the yaml string into Ruby objects.
   def translate(name, output)
-    puts output
     YAML.load(output).inject({}) do |hash, data|
       case data[0]
       when String
