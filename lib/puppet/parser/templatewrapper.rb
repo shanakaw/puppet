@@ -71,15 +71,15 @@ class Puppet::Parser::TemplateWrapper
   # the missing_method definition here until we declare the syntax finally
   # dead.
   def method_missing(name, *args)
-    line_number = script_line
-    if scope.include?(name.to_s)
-      Puppet.deprecation_warning("Variable access via '#{name}' is deprecated. Use '@#{name}' instead. #{to_s}:#{line_number}")
-      return scope[name.to_s, { :file => @__file__, :line => line_number }]
-    else
+    #line_number = script_line
+    #if scope.include?(name.to_s)
+      #Puppet.deprecation_warning("Variable access via '#{name}' is deprecated. Use '@#{name}' instead. #{to_s}:#{line_number}")
+      #return scope[name.to_s, { :file => @__file__, :line => line_number }]
+    #else
       # Just throw an error immediately, instead of searching for
       # other missingmethod things or whatever.
-      raise Puppet::ParseError.new("Could not find value for '#{name}'", @__file__, line_number)
-    end
+      #raise Puppet::ParseError.new("Could not find value for '#{name}'", @__file__, line_number)
+    #end
   end
 
   # @api private
@@ -113,7 +113,7 @@ class Puppet::Parser::TemplateWrapper
 
     result = nil
     benchmark(:debug, "Interpolated template #{template_source}") do
-      template = ERB.new(string, 0, "-")
+      template = ERB.new(content, trim_mode: '-')
       template.filename = @__file__
       result = template.result(binding)
     end
