@@ -263,7 +263,7 @@ module Util
       end
     end
 
-    params[:path] = URI.escape(path)
+    params[:path] = Puppet::Util.uri_encode(path)
 
     begin
       URI::Generic.build(params)
@@ -277,7 +277,9 @@ module Util
   def uri_to_path(uri)
     return unless uri.is_a?(URI)
 
-    path = URI.unescape(uri.path)
+    # CGI.unescape doesn't handle space rules properly in uri paths
+    # URI.unescape does, but returns strings in their original encoding
+    path = uri_unescape(uri.path.encode(Encoding::UTF_8))
 
     if Puppet.features.microsoft_windows? and uri.scheme == 'file'
       if uri.host
@@ -520,7 +522,108 @@ module Util
   end
   module_function :deterministic_rand
 
+  RFC_3986_URI_REGEX = /^(?<scheme>([^:\/?#]+):)?(?<authority>\/\/([^\/?#]*))?(?<path>[^?#]*)(\?(?<query>[^#]*))?(#(?<fragment>.*))?$/
+  # From https://github.com/ruby/ruby/blob/v2_7_3/lib/uri/rfc2396_parser.rb#L24-L46
+  ALPHA = "a-zA-Z"
+  ALNUM = "#{ALPHA}\\d"
+  UNRESERVED = "\\-_.!~*'()#{ALNUM}"
+  RESERVED = ";/?:@&=+$,\\[\\]"
+  UNSAFE = Regexp.new("[^#{UNRESERVED}#{RESERVED}]").freeze
 
+  HEX = "a-fA-F\\d"
+  ESCAPED = Regexp.new("%[#{HEX}]{2}").freeze
+
+  def rfc2396_escape(str)
+    str.gsub(UNSAFE) do |match|
+      tmp = String.new
+      match.each_byte do |uc|
+        tmp << sprintf('%%%02X', uc)
+      end
+      tmp
+    end.force_encoding(Encoding::US_ASCII)
+  end
+  module_function :rfc2396_escape
+
+  def uri_unescape(str)
+    enc = str.encoding
+    enc = Encoding::UTF_8 if enc == Encoding::US_ASCII
+    str.gsub(ESCAPED) { [$&[1, 2]].pack('H2').force_encoding(enc) }
+  end
+  module_function :uri_unescape
+
+  # Percent-encodes a URI string per RFC3986 - https://tools.ietf.org/html/rfc3986
+  #
+  # Properly handles escaping rules for paths, query strings and fragments
+  # independently
+  #
+  # The output is safe to pass to URI.parse or URI::Generic.build and will
+  # correctly round-trip through URI.unescape
+  #
+  # @param [String path] A URI string that may be in the form of:
+  #
+  #   http://foo.com/bar?query
+  #   file://tmp/foo bar
+  #   //foo.com/bar?query
+  #   /bar?query
+  #   bar?query
+  #   bar
+  #   .
+  #   C:\Windows\Temp
+  #
+  #   Note that with no specified scheme, authority or query parameter delimiter
+  #   ? that a naked string will be treated as a path.
+  #
+  #   Note that if query parameters need to contain data such as & or =
+  #   that this method should not be used, as there is no way to differentiate
+  #   query parameter data from query delimiters when multiple parameters
+  #   are specified
+  #
+  # @param [Hash{Symbol=>String} opts] Options to alter encoding
+  # @option opts [Array<Symbol>] :allow_fragment defaults to false. When false
+  #   will treat # as part of a path or query and not a fragment delimiter
+  #
+  # @return [String] a new string containing appropriate portions of the URI
+  #   encoded per the rules of RFC3986.
+  #   In particular,
+  #   path will not encode +, but will encode space as %20
+  #   query will encode + as %2B and space as %20
+  #   fragment behaves like query
+  def uri_encode(path, opts = { :allow_fragment => false })
+    raise ArgumentError.new(_('path may not be nil')) if path.nil?
+
+    # ensure string starts as UTF-8 for the sake of Ruby 1.9.3
+    encoded = String.new.encode!(Encoding::UTF_8)
+
+    # parse uri into named matches, then reassemble properly encoded
+    parts = path.match(RFC_3986_URI_REGEX)
+
+    encoded += parts[:scheme] unless parts[:scheme].nil?
+    encoded += parts[:authority] unless parts[:authority].nil?
+
+    # path requires space to be encoded as %20 (NEVER +)
+    # + should be left unencoded
+    # URI::parse and URI::Generic.build don't like paths encoded with CGI.escape
+    # URI.escape does not change / to %2F and : to %3A like CGI.escape
+    #
+    encoded += rfc2396_escape(parts[:path]) unless parts[:path].nil?
+
+    # each query parameter
+    if !parts[:query].nil?
+      query_string = parts[:query].split('&').map do |pair|
+        # can optionally be separated by an =
+        pair.split('=').map do |v|
+          uri_query_encode(v)
+        end.join('=')
+      end.join('&')
+      encoded += '?' + query_string
+    end
+
+    encoded += ((opts[:allow_fragment] ? '#' : '%23') + uri_query_encode(parts[:fragment])) unless parts[:fragment].nil?
+
+    encoded
+  end
+  module_function :uri_encode
+  
   #######################################################################################################
   # Deprecated methods relating to process execution; these have been moved to Puppet::Util::Execution
   #######################################################################################################

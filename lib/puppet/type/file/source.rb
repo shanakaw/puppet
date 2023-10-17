@@ -56,7 +56,7 @@ module Puppet
         next if Puppet::Util.absolute_path?(source)
 
         begin
-          uri = URI.parse(URI.escape(source))
+          uri = URI.parse(Puppet::Util.uri_encode(source))
         rescue => detail
           self.fail Puppet::Error, "Could not understand source #{source}: #{detail}", detail
         end
@@ -75,7 +75,7 @@ module Puppet
         source = source.sub(/[#{SEPARATOR_REGEX}]+$/, '')
 
         if Puppet::Util.absolute_path?(source)
-          URI.unescape(Puppet::Util.path_to_uri(source).to_s)
+          Puppet::Util.uri_unescape(Puppet::Util.path_to_uri(source).to_s)
         else
           source
         end
@@ -209,7 +209,7 @@ module Puppet
     end
 
     def uri
-      @uri ||= URI.parse(URI.escape(metadata.source))
+      @uri ||= URI.parse(Puppet::Util.uri_encode(metadata.source))
     end
 
     private

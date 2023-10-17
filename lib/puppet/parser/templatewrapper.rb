@@ -113,7 +113,7 @@ class Puppet::Parser::TemplateWrapper
 
     result = nil
     benchmark(:debug, "Interpolated template #{template_source}") do
-      template = ERB.new(content, trim_mode: '-')
+      template = ERB.new(String, trim_mode: '-')
       template.filename = @__file__
       result = template.result(binding)
     end
