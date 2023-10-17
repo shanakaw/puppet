@@ -142,4 +142,33 @@ class Puppet::FileSystem::FileImpl
   def chmod(mode, path)
     FileUtils.chmod(mode, path)
   end
+
+  def replace_file(path, mode = nil)
+    begin
+      stat = lstat(path)
+      gid = stat.gid
+      uid = stat.uid
+      mode ||= stat.mode & 07777
+    rescue Errno::ENOENT
+      mode ||= 0640
+    end
+
+    tempfile = Puppet::FileSystem::Uniquefile.new(Puppet::FileSystem.basename_string(path), Puppet::FileSystem.dir_string(path))
+    begin
+      begin
+        yield tempfile
+        tempfile.flush
+        tempfile.fsync
+      ensure
+        tempfile.close
+      end
+
+      tempfile_path = tempfile.path
+      FileUtils.chown(uid, gid, tempfile_path) if uid && gid
+      chmod(mode, tempfile_path)
+      ::File.rename(tempfile_path, path_string(path))
+    ensure
+      tempfile.close!
+    end
+  end
 end
