@@ -75,7 +75,7 @@ class Puppet::Network::HTTP::API::V1
 
     raise ArgumentError, "No request key specified in #{uri}" if key == "" or key.nil?
 
-    key = URI.unescape(key)
+    key = Puppet::Util.uri_unescape(key)
 
     [indirection, method, key, params]
   end

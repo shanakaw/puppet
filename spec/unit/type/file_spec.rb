@@ -763,7 +763,7 @@ describe Puppet::Type.type(:file) do
       let(:sources) do
         h = {}
         %w{/a /b /c /d}.each do |key|
-          h[key] = URI.unescape(Puppet::Util.path_to_uri(File.expand_path(key)).to_s)
+          h[key] = Puppet::Util.uri_unescape(Puppet::Util.path_to_uri(File.expand_path(key)).to_s)
         end
         h
       end

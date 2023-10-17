@@ -53,7 +53,7 @@ class Puppet::Forge < Semantic::Dependency::Source
   #   bad HTTP response
   def search(term)
     matches = []
-    uri = "/v3/modules?query=#{URI.escape(term)}"
+    uri = "/v3/modules?query=#{Puppet::Util.uri_encode(term)}"
     if Puppet[:module_groups]
       uri += "&module_groups=#{Puppet[:module_groups]}"
     end

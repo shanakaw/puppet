@@ -217,7 +217,7 @@ describe Puppet::Network::HTTP::API::V1 do
     end
 
     it "should URI unescape the indirection key" do
-      escaped = URI.escape("foo bar")
+      escaped = Puppet::Util.uri_encode("foo bar")
       indirection_name, method, key, params = handler.uri2indirection("GET", "/env/foo/#{escaped}", {})
       key.should == "foo bar"
     end
@@ -240,7 +240,7 @@ describe Puppet::Network::HTTP::API::V1 do
     end
 
     it "should use the escaped key as the remainder of the URI" do
-      escaped = URI.escape("with spaces")
+      escaped = Puppet::Util.uri_encode("with spaces")
       handler.class.indirection2uri(request).split("/")[3].sub(/\?.+/, '').should == escaped
     end
 
@@ -262,7 +262,7 @@ describe Puppet::Network::HTTP::API::V1 do
     end
 
     it "should use the escaped key as the remainder of the URI" do
-      escaped = URI.escape("with spaces")
+      escaped = Puppet::Util.uri_encode("with spaces")
       handler.class.request_to_uri_and_body(request).first.split("/")[3].sub(/\?.+/, '').should == escaped
     end
 

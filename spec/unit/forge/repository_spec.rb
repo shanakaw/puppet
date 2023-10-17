@@ -97,7 +97,7 @@ describe Puppet::Forge::Repository do
     it "escapes the received URI" do
       unescaped_uri = "héllo world !! ç à"
       performs_an_http_request do |http|
-        http.expects(:request).with(responds_with(:path, URI.escape(unescaped_uri)))
+        http.expects(:request).with(responds_with(:path, Puppet::Util.uri_encode(unescaped_uri)))
       end
 
       repository.make_http_request(unescaped_uri)
@@ -184,7 +184,7 @@ describe Puppet::Forge::Repository do
     it "escapes the received URI" do
       unescaped_uri = "héllo world !! ç à"
       performs_an_authenticated_http_request do |http|
-        http.expects(:request).with(responds_with(:path, URI.escape(unescaped_uri)))
+        http.expects(:request).with(responds_with(:path, Puppet::Util.uri_encode(unescaped_uri)))
       end
 
       repository.make_http_request(unescaped_uri)
