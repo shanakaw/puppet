@@ -125,8 +125,8 @@ module Puppet::FileSystem
   #
   # @api public
   #
-  def self.read(path)
-    @impl.read(assert_path(path))
+  def self.read(path, opts = {})
+    @impl.read(assert_path(path), opts)
   end
 
   # @return [String] The binary contents of the file
