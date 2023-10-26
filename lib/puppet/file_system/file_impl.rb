@@ -112,7 +112,7 @@ class Puppet::FileSystem::FileImpl
   end
 
   def symlink(path, dest, options = {})
-    FileUtils.symlink(path, dest, options)
+    FileUtils.symlink(path, dest, **options)
   end
 
   def symlink?(path)
