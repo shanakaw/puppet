@@ -94,7 +94,7 @@ describe Puppet::Indirector::Request do
 
       describe "and the URI is a 'file' URI" do
         before do
-          @request = Puppet::Indirector::Request.new(:ind, :method, "#{URI.unescape(Puppet::Util.path_to_uri(file).to_s)}", nil)
+          @request = Puppet::Indirector::Request.new(:ind, :method, "#{Puppet::Util.uri_unescape(Puppet::Util.path_to_uri(file).to_s)}", nil)
         end
 
         it "should set the request key to the unescaped full file path" do
@@ -215,7 +215,7 @@ describe Puppet::Indirector::Request do
   end
 
   it "should be able to return the URI-escaped key" do
-    Puppet::Indirector::Request.new(:myind, :find, "my key", nil).escaped_key.should == URI.escape("my key")
+    Puppet::Indirector::Request.new(:myind, :find, "my key", nil).escaped_key.should == Puppet::Util.uri_encode("my key")
   end
 
   it "should set its environment to an environment instance when a string is specified as its environment" do

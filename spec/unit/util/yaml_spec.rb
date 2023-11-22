@@ -10,40 +10,40 @@ describe Puppet::Util::Yaml do
   it "reads a YAML file from disk" do
     write_file(filename, YAML.dump({ "my" => "data" }))
 
-    expect(Puppet::Util::Yaml.load_file(filename)).to eq({ "my" => "data" })
+    expect(Puppet::Util::Yaml.safe_load_file(filename)).to eq({ "my" => "data" })
   end
 
   it "writes data formatted as YAML to disk" do
     Puppet::Util::Yaml.dump({ "my" => "data" }, filename)
 
-    expect(Puppet::Util::Yaml.load_file(filename)).to eq({ "my" => "data" })
+    expect(Puppet::Util::Yaml.safe_load_file(filename)).to eq({ "my" => "data" })
   end
 
   it "raises an error when the file is invalid YAML" do
     write_file(filename, "{ invalid")
 
-    expect { Puppet::Util::Yaml.load_file(filename) }.to raise_error(Puppet::Util::Yaml::YamlLoadError)
+    expect { Puppet::Util::Yaml.safe_load_file(filename) }.to raise_error(Puppet::Util::Yaml::YamlLoadError)
   end
 
   it "raises an error when the file does not exist" do
-    expect { Puppet::Util::Yaml.load_file("no") }.to raise_error(Puppet::Util::Yaml::YamlLoadError, /No such file or directory/)
+    expect { Puppet::Util::Yaml.safe_load_file("no") }.to raise_error(Puppet::Util::Yaml::YamlLoadError, /No such file or directory/)
   end
 
   it "raises an error when the filename is illegal" do
-    expect { Puppet::Util::Yaml.load_file("not\0allowed") }.to raise_error(Puppet::Util::Yaml::YamlLoadError, /null byte/)
+    expect { Puppet::Util::Yaml.safe_load_file("not\0allowed") }.to raise_error(Puppet::Util::Yaml::YamlLoadError, /null byte/)
   end
 
   context "when the file is empty" do
     it "returns false" do
       Puppet::FileSystem.touch(filename)
 
-      expect(Puppet::Util::Yaml.load_file(filename)).to be_false
+      expect(Puppet::Util::Yaml.safe_load_file(filename)).to be_false
     end
 
     it "allows return value to be overridden" do
       Puppet::FileSystem.touch(filename)
 
-      expect(Puppet::Util::Yaml.load_file(filename, {})).to eq({})
+      expect((Puppet::Util::Yaml.safe_load_file(filename)).to eq({})
     end
   end
 

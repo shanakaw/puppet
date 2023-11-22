@@ -21,7 +21,7 @@ class Puppet::SSL::CertificateRequestAttributes
   def load
     Puppet.info("csr_attributes file loading from #{path}")
     if Puppet::FileSystem.exist?(path)
-      hash = Puppet::Util::Yaml.load_file(path, {})
+      hash = Puppet::Util::Yaml.safe_load_file(path, [Symbol]) || {}
       if ! hash.is_a?(Hash)
         raise Puppet::Error, "invalid CSR attributes, expected instance of Hash, received instance of #{hash.class}"
       end

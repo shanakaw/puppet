@@ -100,7 +100,7 @@ class Puppet::Indirector::Request
   end
 
   def escaped_key
-    URI.escape(key)
+    Puppet::Util.uri_encode(key)
   end
 
   # LAK:NOTE This is a messy interface to the cache, and it's only
@@ -282,7 +282,7 @@ class Puppet::Indirector::Request
   def set_uri_key(key)
     @uri = key
     begin
-      uri = URI.parse(URI.escape(key))
+      uri = URI.parse(Puppet::Util.uri_encode(key))
     rescue => detail
       raise ArgumentError, "Could not understand URL #{key}: #{detail}", detail.backtrace
     end
@@ -306,11 +306,11 @@ class Puppet::Indirector::Request
     @protocol = uri.scheme
 
     if uri.scheme == 'puppet'
-      @key = URI.unescape(uri.path.sub(/^\//, ''))
+      @key = Puppet::Util.uri_unescape(uri.path.sub(/^\//, ''))
       return
     end
 
-    env, indirector, @key = URI.unescape(uri.path.sub(/^\//, '')).split('/',3)
+    env, indirector, @key = Puppet::Util.uri_unescape(uri.path.sub(/^\//, '')).split('/',3)
     @key ||= ''
     self.environment = env unless env == ''
   end

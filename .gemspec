@@ -50,6 +50,6 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<facter>, [">= 1.7", "< 3"])
     s.add_dependency(%q<hiera>, ["~> 1.0"])
   end
-  s.add_dependency("syck")
+  s.add_dependency("psych")
   s.add_dependency("xmlrpc")
 end
