@@ -157,12 +157,13 @@ module Puppet::Network::HTTP
       current_request = request
       current_site = @site
       response = nil
+      redirects = 0
 
       0.upto(@redirect_limit) do |redirection|
         return response if response
 
         with_connection(current_site) do |connection|
-          apply_options_to(current_request, options)
+          apply_options_to(current_request, options) if redirects.zero?
 
           if options[:idempotent]
             current_response = request_with_retries(connection, current_request, &block)
@@ -180,11 +181,17 @@ module Puppet::Network::HTTP
             current_request = current_request.class.new(location.path)
             current_request.body = request.body
             request.each do |header, value|
+              unless Puppet[:location_trusted]
+                # skip adding potentially sensitive header to other hosts
+                next if header.casecmp('Authorization').zero? && request.uri.host.casecmp(location.host) != 0
+                next if header.casecmp('Cookie').zero? && request.uri.host.casecmp(location.host) != 0
+              end
               current_request[header] = value
             end
           else
             response = current_response
           end
+          redirects += 1
         end
 
         # and try again...

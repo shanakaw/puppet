@@ -549,6 +549,11 @@ module Puppet
       :default => '$trusted_node_data',
       :type    => :boolean,
       :desc    => "When true, also prevents $trusted and $facts from being overridden in any scope",
+    },
+    :location_trusted => {
+      :default => false,
+      :type    => :boolean,
+      :desc    => "This will allow sending the name + password and the cookie header to all hosts that puppet may redirect to. This may or may not introduce a security breach if puppet redirects you to a site to which you'll send your authentication info and cookies."
     }
   )
   Puppet.define_settings(:module_tool,
