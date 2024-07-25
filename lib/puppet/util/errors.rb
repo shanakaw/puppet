@@ -98,8 +98,10 @@ module Puppet::Util::Errors
       type = Puppet::Error
     end
 
+    puts '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
     puts type
     puts args.inspect
+    puts '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
 
     other = args.count > 1 ? args.pop : nil
     error = adderrorcontext(type.new(args.join(" ")), other)
